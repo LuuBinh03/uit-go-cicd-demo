@@ -1,0 +1,17 @@
+{
+  "name": "uit-go-cicd-demo",
+  "version": "1.0.0",
+  "description": "Demo CI/CD pipeline for UIT-Go project",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "build": "echo 'Building application...' && node build.js",
+    "test": "echo 'Running tests...' && node test.js"
+  },
+  "keywords": ["azure", "devops", "cicd"],
+  "author": "Luu Binh",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.0"
+  }
+}
