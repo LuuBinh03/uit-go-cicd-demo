@@ -1,18 +1,15 @@
 # Azure DevOps CI/CD Pipeline for UIT-Go Project
-# Trigger: Chạy pipeline khi có push vào branch main
 trigger:
   - main
 
-# Pool: Sử dụng Ubuntu agent mới nhất
+# Sử dụng self-hosted agent pool
 pool:
-  vmImage: 'ubuntu-latest'
+  name: 'Default'
 
-# Variables: Định nghĩa biến môi trường
 variables:
   NODE_VERSION: '18.x'
   BUILD_CONFIGURATION: 'Release'
 
-# Stages: Các giai đoạn của pipeline
 stages:
   - stage: Build
     displayName: 'Build Stage'
@@ -20,7 +17,7 @@ stages:
       - job: BuildJob
         displayName: 'Build and Test Job'
         steps:
-          # Bước 1: Checkout code từ repository
+          # Bước 1: Checkout code
           - checkout: self
             displayName: 'Checkout Source Code'
           
@@ -30,42 +27,53 @@ stages:
               versionSpec: '$(NODE_VERSION)'
             displayName: 'Install Node.js $(NODE_VERSION)'
           
-          # Bước 3: Hiển thị thông tin môi trường
-          - script: |
-              echo "=================================================="
-              echo "Environment Information"
-              echo "=================================================="
-              echo "Node version: $(node --version)"
-              echo "NPM version: $(npm --version)"
-              echo "Build Configuration: $(BUILD_CONFIGURATION)"
-              echo "Agent Name: $(Agent.Name)"
-              echo "Agent OS: $(Agent.OS)"
-              echo "Build Number: $(Build.BuildNumber)"
-              echo "Build ID: $(Build.BuildId)"
-              echo "Source Branch: $(Build.SourceBranch)"
-              echo "Trigger: $(Build.Reason)"
-              echo "=================================================="
+          # Bước 3: Display environment info
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "=================================================="
+                Write-Host "Environment Information"
+                Write-Host "=================================================="
+                Write-Host "Node version: $(node --version)"
+                Write-Host "NPM version: $(npm --version)"
+                Write-Host "Build Configuration: $(BUILD_CONFIGURATION)"
+                Write-Host "Agent Name: $(Agent.Name)"
+                Write-Host "Agent OS: $(Agent.OS)"
+                Write-Host "Build Number: $(Build.BuildNumber)"
+                Write-Host "Build ID: $(Build.BuildId)"
+                Write-Host "Source Branch: $(Build.SourceBranch)"
+                Write-Host "=================================================="
             displayName: 'Display Environment Info'
           
           # Bước 4: Install dependencies
-          - script: |
-              echo "Installing project dependencies..."
-              npm install
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "Installing project dependencies..."
+                npm install
             displayName: 'NPM Install Dependencies'
           
           # Bước 5: Run build
-          - script: |
-              echo "Running build process..."
-              npm run build
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "Running build process..."
+                npm run build
             displayName: 'NPM Run Build'
           
           # Bước 6: Run tests
-          - script: |
-              echo "Running tests..."
-              npm test
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "Running tests..."
+                npm test
             displayName: 'NPM Run Tests'
           
-          # Bước 7: Tạo build artifact
+          # Bước 7: Create artifact
           - task: ArchiveFiles@2
             inputs:
               rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
@@ -83,14 +91,17 @@ stages:
               publishLocation: 'Container'
             displayName: 'Publish Artifacts'
           
-          # Bước 9: Display success message
-          - script: |
-              echo "=================================================="
-              echo "✓ BUILD SUCCESSFUL!"
-              echo "=================================================="
-              echo "Pipeline completed at: $(date)"
-              echo "Artifact created: uit-go-app-$(Build.BuildId).zip"
-              echo "=================================================="
+          # Bước 9: Success summary
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "=================================================="
+                Write-Host "✓ BUILD SUCCESSFUL!"
+                Write-Host "=================================================="
+                Write-Host "Pipeline completed at: $(Get-Date)"
+                Write-Host "Artifact created: uit-go-app-$(Build.BuildId).zip"
+                Write-Host "=================================================="
             displayName: 'Build Success Summary'
 
   - stage: Deploy
@@ -99,17 +110,20 @@ stages:
     condition: succeeded()
     jobs:
       - job: DeployJob
-        displayName: 'Simulated Deployment Job'
+        displayName: 'Simulated Deployment'
         steps:
-          - script: |
-              echo "=================================================="
-              echo "DEPLOYMENT SIMULATION"
-              echo "=================================================="
-              echo "Deploying UIT-Go application..."
-              echo "Target Environment: Development"
-              echo "Deployment started at: $(date)"
-              sleep 3
-              echo "✓ Deployment completed successfully!"
-              echo "Application URL: http://uit-go-dev.azurewebsites.net"
-              echo "=================================================="
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "=================================================="
+                Write-Host "DEPLOYMENT SIMULATION"
+                Write-Host "=================================================="
+                Write-Host "Deploying UIT-Go application..."
+                Write-Host "Target Environment: Development"
+                Write-Host "Deployment started at: $(Get-Date)"
+                Start-Sleep -Seconds 3
+                Write-Host "✓ Deployment completed successfully!"
+                Write-Host "Application URL: http://uit-go-dev.azurewebsites.net"
+                Write-Host "=================================================="
             displayName: 'Simulate Deployment'
