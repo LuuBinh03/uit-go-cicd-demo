@@ -1,0 +1,115 @@
+# Azure DevOps CI/CD Pipeline for UIT-Go Project
+# Trigger: Chạy pipeline khi có push vào branch main
+trigger:
+  - main
+
+# Pool: Sử dụng Ubuntu agent mới nhất
+pool:
+  vmImage: 'ubuntu-latest'
+
+# Variables: Định nghĩa biến môi trường
+variables:
+  NODE_VERSION: '18.x'
+  BUILD_CONFIGURATION: 'Release'
+
+# Stages: Các giai đoạn của pipeline
+stages:
+  - stage: Build
+    displayName: 'Build Stage'
+    jobs:
+      - job: BuildJob
+        displayName: 'Build and Test Job'
+        steps:
+          # Bước 1: Checkout code từ repository
+          - checkout: self
+            displayName: 'Checkout Source Code'
+          
+          # Bước 2: Setup Node.js
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+            displayName: 'Install Node.js $(NODE_VERSION)'
+          
+          # Bước 3: Hiển thị thông tin môi trường
+          - script: |
+              echo "=================================================="
+              echo "Environment Information"
+              echo "=================================================="
+              echo "Node version: $(node --version)"
+              echo "NPM version: $(npm --version)"
+              echo "Build Configuration: $(BUILD_CONFIGURATION)"
+              echo "Agent Name: $(Agent.Name)"
+              echo "Agent OS: $(Agent.OS)"
+              echo "Build Number: $(Build.BuildNumber)"
+              echo "Build ID: $(Build.BuildId)"
+              echo "Source Branch: $(Build.SourceBranch)"
+              echo "Trigger: $(Build.Reason)"
+              echo "=================================================="
+            displayName: 'Display Environment Info'
+          
+          # Bước 4: Install dependencies
+          - script: |
+              echo "Installing project dependencies..."
+              npm install
+            displayName: 'NPM Install Dependencies'
+          
+          # Bước 5: Run build
+          - script: |
+              echo "Running build process..."
+              npm run build
+            displayName: 'NPM Run Build'
+          
+          # Bước 6: Run tests
+          - script: |
+              echo "Running tests..."
+              npm test
+            displayName: 'NPM Run Tests'
+          
+          # Bước 7: Tạo build artifact
+          - task: ArchiveFiles@2
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/uit-go-app-$(Build.BuildId).zip'
+              replaceExistingArchive: true
+            displayName: 'Create Build Artifact'
+          
+          # Bước 8: Publish artifact
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: 'drop'
+              publishLocation: 'Container'
+            displayName: 'Publish Artifacts'
+          
+          # Bước 9: Display success message
+          - script: |
+              echo "=================================================="
+              echo "✓ BUILD SUCCESSFUL!"
+              echo "=================================================="
+              echo "Pipeline completed at: $(date)"
+              echo "Artifact created: uit-go-app-$(Build.BuildId).zip"
+              echo "=================================================="
+            displayName: 'Build Success Summary'
+
+  - stage: Deploy
+    displayName: 'Deploy Stage (Simulation)'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: DeployJob
+        displayName: 'Simulated Deployment Job'
+        steps:
+          - script: |
+              echo "=================================================="
+              echo "DEPLOYMENT SIMULATION"
+              echo "=================================================="
+              echo "Deploying UIT-Go application..."
+              echo "Target Environment: Development"
+              echo "Deployment started at: $(date)"
+              sleep 3
+              echo "✓ Deployment completed successfully!"
+              echo "Application URL: http://uit-go-dev.azurewebsites.net"
+              echo "=================================================="
+            displayName: 'Simulate Deployment'
